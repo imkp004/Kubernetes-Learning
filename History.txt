@@ -1,0 +1,98 @@
+History
+
+Before virtualization and modern architectures, many applications were both 
+monolithic and deployed on dedicated physical servers. A typical app 
+(for example, a Python Flask application) bundled its UI, business logic, 
+database access, and integrations into one large codebase and ran as a 
+single unit on one server. Features like login, checkout, and service pages
+ all lived in that one program and ran together.
+
+If you changed any part of the app—say the login page—you had to rebuild 
+and redeploy the entire application. Because everything was tightly coupled,
+ a bug in one module could easily affect the whole system. At the same time, 
+ each app often had its own physical server, which meant CPU, RAM, and disk 
+ capacity that the app didn’t use were wasted. Adding more applications 
+ typically required more servers, even when existing machines had spare 
+ capacity.
+
+This combination (monolithic apps plus one‑app‑per‑server deployment) led 
+to inefficient use of hardware resources and made changes and scaling slower
+ and riskier.
+
+The layers were like Server -> Operating System -> app dependicies, tools 
+etc -> app its (running)
+
+
+Now with virtualization, the layers look like this: 
+
+physical server → hypervisor → multiple virtual machines → operating 
+system + app dependencies/tools → application running**. 
+
+The hypervisor lets us create many VMs on a single server, which helps us 
+use all the hardware resources the server has (CPU, RAM, storage) instead 
+of wasting them. Each VM gets its own slice of those resources, and inside
+ each VM we can install our own operating system, such as Linux or Windows, 
+ and then run our application on top of that OS. The hypervisor’s job is to 
+ assign hardware components to each VM, so every VM takes a portion of CPU, 
+ memory, and storage from the physical server in a controlled way. 
+
+You can imagine this like a pizza: one whole pizza represents the full 
+capacity of the physical server. If you have six people, you can’t give a 
+whole pizza to each person—if they can’t finish it, food is wasted. 
+Similarly, giving a full server to one app often wastes unused capacity. 
+Instead, you cut the pizza into six slices, and each person gets one 
+slice to eat. In computing terms, virtualization is the act of cutting the 
+pizza: the physical server is the whole pizza, the people are the operating
+ systems and apps, and the slices are the virtual machines created by the
+  hypervisor. This way, many different OSes and applications can share one 
+  physical server efficiently, with each VM using only the portion of 
+  resources it actually needs.
+
+
+and on top of that Cloud came in place where people can create their app and
+ run in the cloud insted of on-premises server which saved the cost, time, 
+ money for buying the server yourself, managing it, hiring people for 
+ networking and app related stuff which is very costly for small business 
+ but, with cloud it became much easier for people to deploy their 
+ application easy, fast, not managin and buying the servers just use the 
+ servers of the cloud providers like aws, azure, gcp etc
+
+So, the era looks likes this
+
+first Data center 
+then Virtualization
+then Cloud
+and now Containers, Kubernetes
+
+With containers, a common tool we use is Docker, which helps us **package 
+and run applications as isolated units** called containers. Containers fit 
+naturally with **microservices architecture**, where each business capability 
+(login, checkout, payment, notifications, etc.) is its own service, often 
+running in its own container.
+
+In a microservices setup, instead of one big application containing 
+everything, you split your system into **many smaller services**. 
+For example, you might have separate services for login, logout, checkout, 
+payment, and notifications. Each service runs in its **own container**, and 
+those containers can run on virtual machines (or directly on physical 
+servers) just like normal applications. You can think of each container 
+as a small app with its own code, dependencies, and runtime, but sharing 
+the underlying OS kernel of the host.
+
+Because each service is in its own container, you gain a lot of flexibility. 
+If you change the login service code, you **don’t need to rebuild and 
+redeploy the entire system**. You only rebuild the login service’s container
+ image and redeploy that container. The rest of the system keeps running 
+ unchanged. This isolates changes and reduces the risk that a small update 
+ will break unrelated features.
+
+Another big benefit is **technology freedom**. Different containers can use 
+different programming languages, frameworks, and internal structures. For example, your login service might be written in Python/Flask, your checkout service in Node.js/Express, your payment service in Java/Spring Boot, and your notification service in Go. As long as they expose APIs (typically HTTP/REST or gRPC) and follow the agreed contracts, they can talk to each other regardless of language or framework. This lets teams choose the best tools for each problem without forcing one global tech stack.
+
+Containers also bring consistency and portability. Each container image 
+includes the application and all its dependencies (libraries, runtime, 
+configuration), so the container tends to behave **the same way on any 
+machine** that runs Docker or another container runtime. That makes it
+ easier to move services between environments (developer laptops, test servers, production VMs, or cloud clusters) without the “works on my machine” problem.
+
+Finally, all these containers need to be managed at scale. In many real systems, containers are orchestrated by **Kubernetes** or similar platforms. Orchestration handles scheduling containers on nodes, restarting them if they fail, scaling them up or down based on load, service discovery, and networking between services. So the typical modern stack becomes: physical server → hypervisor → VMs → Docker/container runtime → many containers (microservices), with an orchestrator like Kubernetes coordinating how those containers run and communicate.
