@@ -1,0 +1,212 @@
+# Kubernetes (K8s) — Core Concepts Guide
+
+---
+
+## What is Kubernetes?
+
+Kubernetes (K8s) is a **container orchestration tool** that manages containers 
+across your infrastructure — whether that's a cloud provider, on-premises 
+servers, or a hybrid of both.
+
+At its core, Kubernetes solves three major problems for production applications:
+
+| Problem | What K8s Does |
+|---|---|
+| **Downtime** | Keeps your app running continuously with no manual intervention |
+| **Traffic spikes** | Scales containers up when load increases, scales down when it drops |
+| **Disaster recovery** | Restores failed containers with data intact so nothing is lost |
+
+---
+
+## Core Components
+
+### Pod
+
+A **Pod** is the smallest deployable unit in Kubernetes. It acts as a 
+wrapper that runs one or more containers — usually just one.
+
+Key characteristics:
+- Every Pod gets its own **IP address**
+- Pods can communicate with each other using their IPs
+- If a container inside a Pod crashes, Kubernetes automatically restarts it
+
+**Example:**
+```
+Pod-1 (IP: 10.0.0.1)  ←──→  Pod-2 (IP: 10.0.0.2)
+  └── Flask App                └── Database
+```
+
+> **Problem:** If a Pod crashes and gets replaced, the new Pod 
+receives a *new* IP address. This breaks communication between Pods 
+that relied on the old IP.
+
+---
+
+### Service
+
+A **Service** solves the IP-change problem by assigning a **permanent, 
+static IP address** to a Pod. If the Pod crashes and a new one starts, 
+the Service ensures the new Pod gets the same IP as the old one — communication 
+is never broken.
+
+There are two types of Services:
+
+- **Internal Service** — for components that should only be accessible *within* the cluster (e.g., a database). Users on the internet cannot reach it.
+- **External Service** — for components that users interact with directly (e.g., a web frontend).
+
+---
+
+### Ingress
+
+Even with an External Service, users would need to type something 
+like `http://192.168.1.1:5000` to reach your app — which is not practical.
+
+**Ingress** is the traffic manager of Kubernetes. It:
+- Receives requests from the internet
+- Routes them to the correct Service based on URL, path, or hostname
+- Allows you to map a clean domain name (e.g., `www.myapp.com`) with no port number required
+
+```
+User types: www.myapp.com
+     ↓
+  [ Ingress ]   ←── routes by hostname/path
+     ↓
+  [ Service ]   ←── permanent IP
+     ↓
+   [ Pod ]      ←── your running app
+```
+
+---
+
+### ConfigMap
+
+Imagine your Flask app has the database URL hardcoded. If the database
+ name ever changes, you'd have to:
+
+1. Update the code
+2. Rebuild the Docker image
+3. Redeploy to Kubernetes
+
+That's slow and error-prone.
+
+**ConfigMap** stores **non-sensitive configuration data** (URLs, app 
+settings, environment variables) *outside* the container image. To change 
+a setting, you only update the ConfigMap — no rebuild, no redeploy.
+
+> Use ConfigMap for: database URLs, feature flags, service endpoints, 
+environment names.
+
+---
+
+### Secret
+
+**Secret** works exactly like ConfigMap, but it's designed for **sensitive
+ data** that must not be exposed:
+
+- Passwords
+- API keys
+- Auth tokens
+- TLS certificates
+
+> Use Secret for anything you would not want committed to a public 
+repository or seen in plain logs.
+
+---
+
+### Volume
+
+A **Volume** attaches persistent storage to a Pod.
+
+Without a Volume, all data stored inside a container is lost the moment 
+that container or Pod crashes or restarts. With a Volume, the data persists
+ independently of the Pod's lifecycle.
+
+```
+Without Volume:  Pod crashes → data gone ✗
+With Volume:     Pod crashes → new Pod starts → data still there ✓
+```
+
+Volumes can point to:
+- Local disk on the node
+- Network storage (NFS, cloud block storage, etc.)
+
+---
+
+## How It All Fits Together
+
+```
+Internet
+   ↓
+[ Ingress ]          ← routes domain to the right service
+   ↓
+[ Service ]          ← permanent IP, load balancing
+   ↓
+[ Pod ]              ← runs your container(s)
+   ├── ConfigMap     ← non-sensitive config injected at runtime
+   ├── Secret        ← sensitive credentials injected securely
+   └── Volume        ← persistent storage attached to the pod
+```
+
+---
+
+## Quick Reference
+
+| Component | Purpose | Stores sensitive data? |
+|---|---|---|
+| **Pod** | Smallest unit; runs containers | — |
+| **Service** | Stable IP for Pod communication | — |
+| **Ingress** | Routes external traffic by domain/path | — |
+| **ConfigMap** | External non-sensitive configuration | ✗ No |
+| **Secret** | External sensitive configuration | ✓ Yes |
+| **Volume** | Persistent storage for Pod data | — |
+
+---
+
+
+
+Deploynment is used to create the replica of your application and now these application
+will have same ip becuase it will use Service and, now the Service componant will
+act like load balencer. This is used for stateless for example Flask API
+React frontend
+
+So, Deploynment is wrapper around the pods. and a pod is a wrapper around container.
+
+
+StatfulSet is generally used for database because you can't replicate data with Deploynment.
+The data will be syncrenized between the replicas and it will also presist by using
+statefulset. It is not easy to use and set it up in real-life so, that's why in 
+companies they use database outside of the cluster
+
+With those two even if our whole node fails or crashed then we still have replicas in 
+another node that will serve our customers.
+
+
+
+Now inside the node we need to have container runtime and kublet installed inside the node.
+Container runtime (containerd) is used to run our container (give them name, pulling image etc)
+kubelet lets our kubernetes run inside the worker node bacically managing them
+if pod or container inside pod crash then its kubelet's job to restart that system
+kube proxy also needs to be installed inside a node because it helps forwards our requests
+for example the app pod requesting to database pod inside same node 
+
+Now comes worker nodes and master node
+worker nodes does the actual job of running the containers that are inside a pod
+and master node is a way to manage those worker nodes. you can have many worker nodes
+
+master node has different process running inside then worker node
+1 - API server which gets initial request and it validates the request and sends the 
+request to other processes. Good for security becuase you have only one entrypoint
+
+2 - Scheduler decides which node it should put the pod in and the kublet will take over from then
+
+3 - Controller manager it detects the state of our cluster and keeps track if it
+crashed, or not working then it will forward the request to scheduler and schedulare
+will do the work of running new pods
+
+4 - etcd is a cluster brain this is where cluster chnages gets stored in the key value store
+
+usually in real there are muntiple master nodes that manage more worker modes
+when we have muntiple master nodes the api server layer is load balenced and the etcd
+storage is distrubuted across the all master nodes.
+
+
