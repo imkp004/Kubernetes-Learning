@@ -1,0 +1,1 @@
+kubectl - to get all the commands used for kubernetes (whole man page for kuber)

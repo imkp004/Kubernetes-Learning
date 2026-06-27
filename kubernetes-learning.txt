@@ -210,3 +210,6 @@ when we have muntiple master nodes the api server layer is load balenced and the
 storage is distrubuted across the all master nodes.
 
 
+So, a cluster set includes the master nodes and worker nodes. If our app needs
+more resources overtime then we have to create new master and worker nodes to 
+manage the cpu, ram, and storage across different nodes
